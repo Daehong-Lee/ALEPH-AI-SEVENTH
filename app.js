@@ -2,8 +2,8 @@
  * Supabase Auth(이메일+비밀번호) + RLS로 개인 자료를 계정별로 분리합니다.
  * 브라우저에는 Project URL + publishable/anon key만 둡니다. service_role/secret key 금지.
  */
-const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://zmflojkomojuzhuhrdrr.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_kCpd_cxjudgfgPaHlmwaEA_DsYECMrw";
 const configured = !SUPABASE_URL.includes("YOUR_PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE");
 const { createClient } = window.supabase;
 const sb = createClient(configured ? SUPABASE_URL : "https://placeholder.invalid", configured ? SUPABASE_ANON_KEY : "placeholder");
