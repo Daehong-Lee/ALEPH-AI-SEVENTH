@@ -8,78 +8,64 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="site-header">
-    <div>
-      <p class="eyebrow">PLAN → DO → SEE</p>
-      <h1>플랜두씨 다이어리</h1>
-      <p class="subtitle">내 계획과 실제를 한 흐름으로 기록합니다.</p>
-    </div>
-    <div class="connection">
-      <span id="connectionDot" class="dot offline"></span>
-      <span id="connectionText">연결 확인 중</span>
-      <span id="userEmail" class="muted"></span>
-      <button id="signOutBtn" class="secondary hidden">로그아웃</button>
-    </div>
-  </header>
+<header class="site-header">
+  <div><p class="eyebrow">PLAN → DO → SEE</p><h1>플랜두씨 다이어리</h1><p class="subtitle">계획 안에 할 일을 만들고, 완료한 순간 실제 기록으로 남깁니다.</p></div>
+  <div class="connection"><span id="connectionDot" class="dot offline"></span><span id="connectionText">연결 확인 중</span><span id="userEmail" class="muted"></span><button id="signOutBtn" class="secondary hidden">로그아웃</button></div>
+</header>
+<main class="container">
+  <section id="publicNotice" class="notice danger"><strong>로그인 필요</strong><p>로그인한 계정의 자료만 열립니다.</p></section>
+  <section id="setupPanel" class="notice info hidden"><strong>Supabase 연결이 필요합니다.</strong><p><code>app.js</code>의 공개 URL과 anon/publishable key를 설정하세요.</p></section>
+  <section id="authPanel" class="auth-panel panel">
+    <div class="auth-copy"><p class="eyebrow">PRIVATE DIARY</p><h2>내 기록은 로그인 뒤에만 보입니다.</h2><p>이메일과 비밀번호로 가입하거나 로그인하세요. 비밀번호는 Supabase Auth가 처리합니다.</p></div>
+    <div class="auth-form"><label>이메일<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>비밀번호<input id="authPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="8자 이상 권장"></label><div class="form-actions"><button id="signInBtn" class="primary">로그인</button><button id="signUpBtn" class="secondary">회원가입</button></div></div>
+  </section>
+  <div id="appShell" class="hidden">
+    <section class="notice success"><strong>개인 자료 보호됨</strong><p>RLS가 현재 로그인 계정의 자료만 허용합니다.</p></section>
+    <div class="account-actions panel"><div><strong>계정 관리</strong><p class="muted">현재 계정: <span id="accountEmail"></span></p></div><div class="card-actions"><button id="deleteAccountBtn" class="danger-btn">계정 및 자료 삭제</button></div></div>
+    <nav class="tabs" aria-label="주요 화면"><button class="tab active" data-tab="dashboard">돌아보기</button><button class="tab" data-tab="plan">계획</button><button class="tab" data-tab="completed">완료</button><button class="tab" data-tab="logs">실행 기록</button><button class="tab" data-tab="export">내보내기</button></nav>
 
-  <main class="container">
-    <section id="publicNotice" class="notice danger">
-      <strong>로그인 필요</strong>
-      <p>이 다이어리는 로그인한 계정의 자료만 보여줍니다. 로그인하지 않은 상태에서는 자료 목록·계획·할 일이 열리지 않습니다.</p>
+    <section id="dashboard" class="view active">
+      <div class="section-heading"><div><p class="eyebrow">SEE</p><h2>돌아보기</h2></div><label>기간<select id="reviewPeriod"><option value="all">전체</option><option value="7">최근 7일</option><option value="30" selected>최근 30일</option><option value="90">최근 90일</option></select></label></div>
+      <div id="stats" class="stats-grid"></div>
+      <div class="review-card"><div><h3>예상과 실제</h3><p id="timeSummary">데이터를 불러오는 중…</p></div></div>
+      <div class="panel"><div class="panel-heading"><h3>근거 기록</h3><span class="muted">완료된 항목을 날짜별 실행 기록에서 확인할 수 있습니다.</span></div><div id="evidenceList"></div></div>
     </section>
 
-    <section id="setupPanel" class="notice info hidden">
-      <strong>Supabase 연결이 필요합니다.</strong>
-      <p><code>app.js</code>의 <code>SUPABASE_URL</code>과 <code>SUPABASE_ANON_KEY</code>에 Supabase 프로젝트의 공개 URL과 anon/publishable key를 넣어 주세요.</p>
+    <section id="plan" class="view">
+      <div class="section-heading"><div><p class="eyebrow">PLAN → DO</p><h2>계획</h2></div><button id="newPlanBtn" class="primary">새 계획</button></div>
+      <p class="muted">할 일은 별도 탭에서 만들지 않습니다. 계획을 입력할 때 계획의 하위 항목으로 함께 등록합니다.</p>
+      <div id="planList"></div>
+      <div id="planEditor" class="modal hidden" role="dialog" aria-modal="true"><form id="planForm" class="modal-card"><div class="modal-heading"><h3 id="planFormTitle">새 계획</h3><button type="button" class="icon-btn" data-close="planEditor">×</button></div>
+        <input type="hidden" id="planId">
+        <label>계획명<input id="planTitle" required maxlength="120"></label>
+        <div class="two-col"><label>시작일<input id="planStart" type="date" required></label><label>종료일<input id="planEnd" type="date" required></label></div>
+        <div class="two-col"><label>우선순위<select id="planPriority"><option value="high">높음</option><option value="medium" selected>보통</option><option value="low">낮음</option></select></label><label>예상 시간(분)<input id="planMinutes" type="number" min="0" step="1" required></label></div>
+        <label>성공 기준<textarea id="planSuccess" rows="3" required></textarea></label>
+        <div class="subsection-heading"><h4>할 일</h4><button type="button" id="addPlanTaskBtn" class="secondary">항목 추가</button></div>
+        <div id="planTaskEditorList"></div>
+        <div class="form-actions"><button type="button" class="secondary" data-close="planEditor">취소</button><button class="primary">저장</button></div>
+        <p class="form-note">완료 버튼을 누르면 해당 항목이 계획의 진행 중 목록에서 완료 목록으로 이동하고, 완료 날짜가 실행 기록에 자동으로 남습니다.</p>
+      </form></div>
+      <div id="planHistory" class="panel hidden"></div>
     </section>
 
-    <section id="authPanel" class="auth-panel panel">
-      <div class="auth-copy">
-        <p class="eyebrow">PRIVATE DIARY</p>
-        <h2>내 기록은 로그인 뒤에만 보입니다.</h2>
-        <p>이메일과 비밀번호로 가입하거나 로그인하세요. 비밀번호는 브라우저 코드에 저장하지 않고 Supabase Auth가 처리합니다.</p>
-      </div>
-      <div class="auth-form">
-        <label>이메일<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-        <label>비밀번호<input id="authPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="8자 이상 권장"></label>
-        <div class="form-actions"><button id="signInBtn" class="primary">로그인</button><button id="signUpBtn" class="secondary">회원가입</button></div>
-        <p class="muted">로그인 실패 시 계정 존재 여부를 구분하지 않고 같은 안내를 보여줍니다.</p>
-      </div>
+    <section id="completed" class="view">
+      <div class="section-heading"><div><p class="eyebrow">DONE</p><h2>완료</h2></div></div>
+      <p class="muted">계획 또는 할 일을 완료한 순서대로 표시합니다. 완료된 항목은 이 화면에서 수정하거나 되돌릴 수 없습니다.</p>
+      <div id="completedList"></div>
     </section>
 
-    <div id="appShell" class="hidden">
-      <section class="notice success">
-        <strong>개인 자료 보호됨</strong>
-        <p>Supabase RLS가 현재 로그인 계정의 <code>user_id</code>만 허용합니다. 로그아웃하면 세션이 끊기고 자료 요청은 거절됩니다.</p>
-      </section>
+    <section id="logs" class="view">
+      <div class="section-heading"><div><p class="eyebrow">DO → SEE</p><h2>실행 기록</h2></div></div>
+      <p class="muted">실행 기록은 직접 입력하지 않습니다. 계획의 할 일을 완료한 순간 자동 생성되며 완료일별로 묶어 보여줍니다.</p>
+      <div id="logList"></div>
+    </section>
 
-      <div class="account-actions panel">
-        <div><strong>계정 관리</strong><p class="muted">현재 계정: <span id="accountEmail"></span></p></div>
-        <div class="card-actions"><button id="deleteAccountBtn" class="danger-btn">계정 및 자료 삭제</button></div>
-      </div>
-
-      <nav class="tabs" aria-label="주요 화면">
-        <button class="tab active" data-tab="dashboard">돌아보기</button><button class="tab" data-tab="plan">계획</button><button class="tab" data-tab="tasks">할 일</button><button class="tab" data-tab="logs">실행 기록</button><button class="tab" data-tab="export">내보내기</button>
-      </nav>
-
-      <section id="dashboard" class="view active">
-        <div class="section-heading"><div><p class="eyebrow">SEE</p><h2>돌아보기</h2></div><label>기간<select id="reviewPeriod"><option value="all">전체</option><option value="7">최근 7일</option><option value="30" selected>최근 30일</option><option value="90">최근 90일</option></select></label></div>
-        <div id="stats" class="stats-grid"></div><div class="review-card"><div><h3>예상과 실제</h3><p id="timeSummary">데이터를 불러오는 중…</p></div><div id="nextPlanBox"></div></div>
-        <div class="panel"><div class="panel-heading"><h3>근거 기록</h3><span class="muted">집계 숫자를 누르면 아래 목록으로 이동합니다.</span></div><div id="evidenceList"></div></div>
-      </section>
-
-      <section id="plan" class="view"><div class="section-heading"><div><p class="eyebrow">PLAN</p><h2>계획</h2></div><button id="newPlanBtn" class="primary">새 계획</button></div><div id="planList"></div><div id="planEditor" class="modal hidden" role="dialog" aria-modal="true"><form id="planForm" class="modal-card"><div class="modal-heading"><h3 id="planFormTitle">새 계획</h3><button type="button" class="icon-btn" data-close="planEditor">×</button></div><input type="hidden" id="planId"><label>계획명<input id="planTitle" required maxlength="120"></label><div class="two-col"><label>시작일<input id="planStart" type="date" required></label><label>종료일<input id="planEnd" type="date" required></label></div><div class="two-col"><label>우선순위<select id="planPriority"><option value="high">높음</option><option value="medium" selected>보통</option><option value="low">낮음</option></select></label><label>예상 시간(분)<input id="planMinutes" type="number" min="0" step="1" required></label></div><label>성공 기준<textarea id="planSuccess" rows="3" required></textarea></label><div class="form-actions"><button type="button" class="secondary" data-close="planEditor">취소</button><button class="primary">저장</button></div><p class="form-note">수정하면 이전 값은 계획 이력에 자동으로 남습니다.</p></form></div><div id="planHistory" class="panel hidden"></div></section>
-
-      <section id="tasks" class="view"><div class="section-heading"><div><p class="eyebrow">DO</p><h2>할 일</h2></div><button id="newTaskBtn" class="primary">할 일 추가</button></div><div class="filters panel"><div><label>검색<input id="taskSearch" placeholder="내용, 태그 검색"></label></div><div><label>상태<select id="taskStatusFilter"><option value="all">전체</option><option value="in_progress">진행 중</option><option value="done">완료</option></select></label></div><div><label>우선순위<select id="taskPriorityFilter"><option value="all">전체</option><option value="high">높음</option><option value="medium">보통</option><option value="low">낮음</option></select></label></div><div><label>정렬<select id="taskSort"><option value="due_asc">마감일 오름차순 → 우선순위 → ID</option><option value="priority_desc">우선순위 내림차순 → 마감일 → ID</option><option value="created_desc">생성일 최신순 → ID</option></select></label></div></div><p class="muted sort-note">정렬 기준은 위 선택값대로 고정되며, 값이 같으면 ID 오름차순으로 안정적으로 정렬합니다.</p><div id="taskList"></div><div id="taskEditor" class="modal hidden" role="dialog" aria-modal="true"><form id="taskForm" class="modal-card"><div class="modal-heading"><h3 id="taskFormTitle">새 할 일</h3><button type="button" class="icon-btn" data-close="taskEditor">×</button></div><input type="hidden" id="taskId"><label>계획<select id="taskPlan" required></select></label><label>할 일<input id="taskTitle" required maxlength="160"></label><div class="two-col"><label>마감일<input id="taskDue" type="date"></label><label>우선순위<select id="taskPriority"><option value="high">높음</option><option value="medium" selected>보통</option><option value="low">낮음</option></select></label></div><div class="two-col"><label>태그<input id="taskTags" placeholder="예: 집중, 자료조사"></label><label>예상 시간(분)<input id="taskMinutes" type="number" min="0" step="1" required></label></div><div class="form-actions"><button type="button" class="secondary" data-close="taskEditor">취소</button><button class="primary">저장</button></div></form></div></section>
-
-      <section id="logs" class="view"><div class="section-heading"><div><p class="eyebrow">DO</p><h2>실행 기록</h2></div><button id="newLogBtn" class="primary">실행 기록 추가</button></div><div id="logList"></div><div id="logEditor" class="modal hidden" role="dialog" aria-modal="true"><form id="logForm" class="modal-card"><div class="modal-heading"><h3>실행 기록</h3><button type="button" class="icon-btn" data-close="logEditor">×</button></div><label>할 일<select id="logTask" required></select></label><div class="two-col"><label>시작 시각<input id="logStart" type="datetime-local" required></label><label>끝난 시각<input id="logEnd" type="datetime-local" required></label></div><label>실제로 걸린 시간(분)<input id="logMinutes" type="number" min="0" step="1" required></label><label>막혔던 이유<textarea id="logBlocked" rows="3" placeholder="없으면 비워 두세요."></textarea></label><div class="form-actions"><button type="button" class="secondary" data-close="logEditor">취소</button><button class="primary">저장</button></div></form></div></section>
-
-      <section id="export" class="view"><div class="section-heading"><div><p class="eyebrow">BACKUP</p><h2>내 자료 내보내기</h2></div></div><div class="panel"><p>현재 계정의 계획, 계획 이력, 할 일, 완료 기록, 실행 기록, 돌아보기 메모를 하나의 JSON 파일로 저장합니다.</p><button id="exportBtn" class="primary">전체 자료 JSON 내보내기</button></div><div class="panel"><h3>보안 점검 메모</h3><ul class="checklist"><li>브라우저에는 Supabase URL과 anon/publishable key만 둡니다.</li><li>service_role/secret key는 절대 넣지 않습니다.</li><li>비밀번호는 Supabase Auth가 bcrypt로 해시해 저장하며 앱 테이블에 원문을 저장하지 않습니다.</li><li>RLS가 모든 자료 테이블에서 로그인 사용자와 행의 user_id를 비교합니다.</li></ul></div></section>
-    </div>
-  </main>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./app.js"></script>
+    <section id="export" class="view"><div class="section-heading"><div><p class="eyebrow">BACKUP</p><h2>내 자료 내보내기</h2></div></div><div class="panel"><p>현재 계정의 계획, 계획 이력, 계획 하위 할 일, 완료 기록, 실행 기록, 돌아보기 메모를 하나의 JSON 파일로 저장합니다.</p><button id="exportBtn" class="primary">전체 자료 JSON 내보내기</button></div><div class="panel"><h3>보안 점검 메모</h3><ul class="checklist"><li>브라우저에는 Supabase URL과 anon/publishable key만 둡니다.</li><li>service_role/secret key는 넣지 않습니다.</li><li>비밀번호는 Supabase Auth가 처리하고 앱 테이블에는 저장하지 않습니다.</li><li>RLS가 사용자별 자료 접근을 제한합니다.</li></ul></div></section>
+  </div>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./app.js"></script>
 </body>
 </html>

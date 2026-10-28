@@ -1,43 +1,52 @@
 {
-  "schema_version": "pds-schema-v2-auth-d2",
-  "timezone": {
-    "storage": "timestamptz/UTC",
-    "display": "Asia/Seoul",
-    "date_rule": "지연 여부는 서울 시간(Asia/Seoul)의 오늘 날짜보다 due_date가 앞선 미완료 task만 지연으로 계산"
-  },
-  "authentication": {
-    "provider": "Supabase Auth",
-    "method": "email + password",
-    "password_hashing": "bcrypt handled by Supabase Auth; random salt per password",
-    "browser_secret_policy": "Project URL + anon/publishable key only; service_role/secret key never shipped",
-    "session": "Supabase JWT access token + refresh token",
-    "logout_invalidation": "d2_current_session_is_active() checks JWT session_id against auth.sessions in Diary 2 RLS"
-  },
+  "schema": "pds-schema-v2-auth-d2-plan-task-v3",
+  "timezone": "Asia/Seoul",
   "tables": {
-    "d2_profiles": {"pk":"id uuid","owner":"id -> auth.users.id"},
-    "d2_plans": {"pk":"id uuid","owner":"user_id -> auth.users.id","fields":["title","start_date","end_date","priority","success_criteria","expected_minutes","derived_from_review_note_id","created_at","updated_at"]},
-    "d2_plan_versions": {"pk":"id uuid","owner":"user_id -> auth.users.id","fk":["plan_id -> d2_plans.id"],"purpose":"계획 UPDATE 직전 OLD 값을 보존"},
-    "d2_tasks": {"pk":"id uuid","owner":"user_id -> auth.users.id","fk":["plan_id -> d2_plans.id"],"fields":["title","due_date","priority","tags","expected_minutes","status","deleted_at","created_at","updated_at"]},
-    "d2_task_completions": {"pk":"id uuid","owner":"user_id -> auth.users.id","unique":["task_id"],"fk":["task_id -> d2_tasks.id"],"purpose":"완료 중복 방지"},
-    "d2_execution_logs": {"pk":"id uuid","owner":"user_id -> auth.users.id","fk":["task_id -> d2_tasks.id"],"fields":["started_at","ended_at","actual_minutes","blocked_reason","created_at"]},
-    "d2_review_notes": {"pk":"id uuid","owner":"user_id -> auth.users.id","fk":["plan_id -> d2_plans.id"],"fields":["note","created_at"]}
+    "d2_profiles": {
+      "owner": "auth.users.id"
+    },
+    "d2_plans": {
+      "owner": "user_id",
+      "children": [
+        "d2_tasks"
+      ]
+    },
+    "d2_plan_versions": {
+      "owner": "user_id",
+      "parent": "d2_plans"
+    },
+    "d2_tasks": {
+      "owner": "user_id",
+      "parent": "d2_plans",
+      "completion": "d2_task_completions"
+    },
+    "d2_task_completions": {
+      "owner": "user_id",
+      "one_per_task": true
+    },
+    "d2_execution_logs": {
+      "owner": "user_id",
+      "source": "d2_complete_task_once",
+      "grouping": "completed_date"
+    },
+    "d2_plan_completions": {
+      "owner": "user_id",
+      "parent": "d2_plans",
+      "one_per_plan": true
+    }
   },
-  "relationships":["d2_plans 1:N d2_tasks","d2_plans 1:N d2_plan_versions","d2_tasks 1:0..1 d2_task_completions","d2_tasks 1:N d2_execution_logs"],
-  "security": {
-    "rls": "authenticated users only; every row must match auth.uid() = user_id and an active auth.sessions session",
-    "anonymous_access": "revoked from all Diary 2 d2_* tables",
-    "legacy_migration": "not included; Diary 2 is a new independent database",
-    "account_deletion": "d2_delete_my_account() deletes auth.users row; owned d2_* rows cascade",
-    "secret_policy": "service_role/secret key must never be shipped to browser"
-  },
-  "review_rules": {
-    "plan_count": "삭제되지 않은 task 수",
-    "completed_count": "현재 done 상태인 task 수",
-    "delayed_count": "미완료이고 서울 시간 기준 오늘보다 due_date가 이전인 task 수",
-    "blocked_count": "blocked_reason이 하나라도 적힌 execution_log를 가진 task 수",
-    "expected_minutes": "대상 task의 expected_minutes 합계",
-    "actual_minutes": "대상 task에 연결된 execution_logs.actual_minutes 합계",
-    "difference_minutes": "actual_minutes - expected_minutes",
-    "completion_idempotency": "d2_complete_task_once RPC + d2_task_completions.task_id UNIQUE"
+  "rules": {
+    "tasks_created_with_plan": true,
+    "task_tab_removed": true,
+    "manual_execution_log_entry": false,
+    "completion_creates_execution_log": true,
+    "completion_moves_ui_item_to_completed": true,
+    "completed_tab_sort": "completed_at_desc",
+    "completed_items_read_only": true,
+    "task_tags_displayed": true,
+    "rls": "auth.uid() = user_id",
+    "plan_completion_creates_record": true,
+    "completed_plan_hidden_from_plan_tab": true,
+    "completed_plan_is_read_only": true
   }
 }

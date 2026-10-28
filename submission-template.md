@@ -23,7 +23,8 @@
 - 로그아웃: `index.html` → `app.js: signOut()` → `sb.auth.signOut()`
 - 자료 조회: `app.js: loadAll()` → `d2_*` 테이블 → RLS
 - 자료 저장/수정/삭제: `app.js` CRUD → `d2_*` 테이블 → RLS
-- 세션 폐기 검사: `supabase.sql: d2_current_session_is_active()`
+- 완료/실행 기록 자동 편입: `supabase.sql: d2_complete_task_once()`
+- 실행 기록 일자 분류: `d2_execution_logs.completed_date` (`Asia/Seoul`)
 - 완료 중복 방지: `supabase.sql: d2_complete_task_once()` + `d2_task_completions.task_id UNIQUE`
 - 계정 삭제: `supabase.sql: d2_delete_my_account()`
 
